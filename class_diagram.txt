@@ -1,0 +1,27 @@
+Class:
+ - members: List[Member]
+
+
+Class Member:
+    -type (priv public protected)
+    -name
+    -describtion
+
+Class Function
+    -type (priv public protected)
+    -name
+    -input : Class input
+    -output type
+    -describtion
+
+Class input:
+    -type
+    -name
+    -default value
+
+json file:
+className
+classMembers:{
+    memberName
+
+}
