@@ -3,16 +3,16 @@ Class:
 
 
 Class Member:
-    -type (priv public protected)
     -name
+    -type (priv public protected)
     -describtion
 
 Class Function
-    -type (priv public protected)
     -name
+    -type (priv public protected)
+    -describtion
     -input : Class input
     -output type
-    -describtion
 
 Class input:
     -type

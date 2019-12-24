@@ -1,0 +1,31 @@
+{
+    "title": "Simple UML Class Designer",
+    "background": "gray85",
+	"last-opened-folder": "D:/Coding/GIT/SketchReg",
+	"text-font": "Arial",
+	"button-font": "Arial",
+	"cList-font": "Arial",
+	"list-font":"Arial",
+	"button-font-size": 10,
+	"heading-font-size": 20,
+	"text-font-size": 15,
+	"cList-font-size":15,
+	"list-font-size":15,
+	"add-button-background":"green",
+	"remove-button-background":"red",
+	"cList-background":"snow",
+	"button-background": "snow",
+	"description-background": "snow",
+	"class-list-background": "snow",
+	"list-background": "snow",
+	"accessibility-types":[
+		"+",
+		"#",
+		"-"
+	],
+	"editorWindow-column-minsize":150,
+	"description-height":10,
+	"description-width": 40,
+	"cList-width":20,
+	"name/extends-width":12
+}
