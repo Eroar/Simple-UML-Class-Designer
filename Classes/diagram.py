@@ -1,7 +1,8 @@
 from __future__ import annotations
-from typing import List, Dict, Any
-import json
+
 import copy
+import json
+from typing import Any, Dict, List
 
 from .classContent import ClassContent
 from .member import Member
@@ -32,7 +33,7 @@ class Diagram(ClassContent):
 
     def setMethod(self, index: int, newMethod: Method) -> None:
         if index < len(self._methods):
-            self._members[index] = newMethod
+            self._methods[index] = newMethod
 
     def setMethods(self, newMethods: List[Method]) -> None:
         self._methods = newMethods
@@ -54,6 +55,9 @@ class Diagram(ClassContent):
         for method in self._methods:
             methodsCopy.append(copy.copy(method))
         return methodsCopy
+    
+    def getCopy(self) -> Diagram:
+        return copy.copy(self)
 
     @staticmethod
     def diagramFromJson(jsonFilePath: str) -> Diagram:
