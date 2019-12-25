@@ -1,7 +1,7 @@
 from typing import Dict
+from abc import ABC
 
-
-class ClassContent:
+class ClassContent(ABC):
     def __init__(self, name: str, accessibility: str, description: str):
         self._name: str = name
         self._accessibility: str = accessibility

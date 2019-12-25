@@ -2,5 +2,6 @@
     "python.linting.pylintEnabled": false,
     "python.linting.mypyEnabled": true,
     "python.linting.enabled": true,
-    "python.terminal.executeInFileDir": true
+    "python.terminal.executeInFileDir": true,
+    "python.pythonPath": "C:\\Program Files\\Python37\\python.exe"
 }

@@ -1,31 +1,47 @@
 {
     "title": "Simple UML Class Designer",
     "background": "gray85",
-	"last-opened-folder": "D:\\GIT\\Simple-UML-Class-Designer",
+	"last-opened-folder": "D:\\Coding\\GIT\\Simple-UML-Class-Designer",
+	"class-list-font":"Arial",
+	"class-list-font-size":15,
+	"class-list-width":15,
+	"class-list-height":15,
+	"class-list-background": "snow",
+
+	"normal-list-font":"Arial",
+	"normal-list-font-size":15,
+	"normal-list-width":15,
+	"normal-list-height":15,
+	"normal-list-background": "snow",
+
 	"text-font": "Arial",
+	"text-font-size": 15,
+	"text-background": "snow",
+
+	"entry-font": "Arial",
+	"entry-font-size": 15,
+	"entry-background": "snow",
+	
+	"label-font": "Arial",
+	"label-font-size": 15,
+	"label-background": "gray85",
+
 	"button-font": "Arial",
-	"cList-font": "Arial",
-	"list-font":"Arial",
+	"button-background": "snow",
+	"heading-font": "Arial",
 	"button-font-size": 10,
 	"heading-font-size": 20,
-	"text-font-size": 15,
-	"cList-font-size":15,
-	"list-font-size":15,
 	"add-button-background":"green",
 	"remove-button-background":"red",
-	"cList-background":"snow",
-	"button-background": "snow",
+	"normal-button-background": "snow",
 	"description-background": "snow",
-	"class-list-background": "snow",
-	"list-background": "snow",
 	"accessibility-types":[
-		"+",
-		"#",
-		"-"
+		"+ (public)",
+		"# (protected)",
+		"- (private)"
 	],
 	"editorWindow-column-minsize":150,
 	"description-height":10,
 	"description-width": 40,
-	"cList-width":20,
 	"name/extends-width":12
 }

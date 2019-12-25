@@ -1,25 +1,13 @@
-class Animal:
-	def __init__(self, name):
-		self.name=name
-	
-	def sayName(self):
-		print("I'm ", self.name)
+from guiClasses import ClassGui
 
-class FourLeg(Animal):
-	def __init__(self, name):
-		super().__init__(name)
-	
-	def say(self):
-		print("Im a fourleg")
+if __name__ == "__main__":
+    from tkinter import Tk
+    import json
+    root = Tk()
+    settingsPath = "D:\\Coding\GIT\\Simple-UML-Class-Designer\\settings.json"
+    with open(settingsPath, "r") as f:
+        settings = json.load(f)
 
-class Dog(FourLeg):
-	def __init__(self, name):
-		super().__init__(name)
-	
-	def WoofAndSayName(self):
-		print("Woof")
-		super().sayName()
-		super().say()
-
-dog=Dog("reks")
-dog.WoofAndSayName()
+    cGui = ClassGui(settings)
+    cGui.getFrame(root).pack(fill="both")
+    root.mainloop()

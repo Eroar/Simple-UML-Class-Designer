@@ -1,12 +1,13 @@
 from __future__ import annotations
-from typing import Any, Dict, List, Set
+
+import json
+import os
 import tkinter
 import tkinter.filedialog
 import tkinter.messagebox
 import tkinter.simpledialog
 from tkinter import ttk
-import json
-import os
+from typing import Any, Dict, List, Set
 
 
 def donothing():
@@ -95,9 +96,9 @@ class UML_Designer(tkinter.Frame):
         self.pack(fill="both", expand=1)
 
         cList: tkinter.Listbox = tkinter.Listbox(self, selectmode=tkinter.SINGLE, background=self.getSetting(
-            "class-list-background"), width=self.getSetting("cList-width"), bd=5)
-        cList.configure(font=(self.getSetting("cList-font"), self.getSetting(
-            "cList-font-size")), background=self.getSetting("cList-background"))
+            "class-list-background"), width=self.getSetting("class-list-width"), bd=5)
+        cList.configure(font=(self.getSetting("class-list-font"), self.getSetting(
+            "class-list-font-size")), background=self.getSetting("class-list-background"))
         fileList: List[str] = [f for f in os.listdir(
             folderPath) if os.path.isfile(os.path.join(folderPath, f))]
 
@@ -204,7 +205,6 @@ class UML_Designer(tkinter.Frame):
         classMembersFrame.rowconfigure(1, weight=1)
         classMembersFrame.columnconfigure(0, weight=1)
         classMembersFrame.columnconfigure(1, weight=1)
-        
 
         tkinter.Label(editorFrame, text="Members", pady=5, font=(self.getSetting("text-font"), self.getSetting(
             "heading-font-size")), background=self.getSetting("background")).grid(row=0, column=1, sticky="wnes")
@@ -220,15 +220,15 @@ class UML_Designer(tkinter.Frame):
             self, membersList.curselection(), membersList))
 
         addMemberButton: tkinter.Button = tkinter.Button(classMembersFrame, font=(self.getSetting("button-font"), self.getSetting("button-font-size")),
-                                                   background=self.getSetting("add-button-background"), text="Add member",
-                                                   command=lambda: self._addStringToList(membersList, self, "Add new member", "Enter new member's name:"))
+                                                         background=self.getSetting("add-button-background"), text="Add member",
+                                                         command=lambda: self._addStringToList(membersList, self, "Add new member", "Enter new member's name:"))
         addMemberButton.grid(row=0, column=0, sticky="wens")
 
         deleteMemberButton: tkinter.Button = tkinter.Button(classMembersFrame, font=(self.getSetting("button-font"), self.getSetting("button-font-size")),
-                                                      background=self.getSetting("remove-button-background"), text="Remove member",
-                                                      command=lambda: membersList.delete(
-                                                          membersList.curselection())
-                                                      if len(membersList.curselection()) > 0 else False)
+                                                            background=self.getSetting("remove-button-background"), text="Remove member",
+                                                            command=lambda: membersList.delete(
+            membersList.curselection())
+            if len(membersList.curselection()) > 0 else False)
         deleteMemberButton.grid(row=0, column=1, sticky="wens")
         # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -254,15 +254,15 @@ class UML_Designer(tkinter.Frame):
             classMethodsFrame, methodsList.curselection(), methodsList))
 
         addMethodButton: tkinter.Button = tkinter.Button(classMethodsFrame, font=(self.getSetting("button-font"), self.getSetting("button-font-size")),
-                                                   background=self.getSetting("add-button-background"), text="Add method",
-                                                   command=lambda: self._addStringToList(methodsList, self, "Add new method", "Enter new method's name:"))
+                                                         background=self.getSetting("add-button-background"), text="Add method",
+                                                         command=lambda: self._addStringToList(methodsList, self, "Add new method", "Enter new method's name:"))
         addMethodButton.grid(row=0, column=0, sticky="wens")
 
         deleteMethodButton: tkinter.Button = tkinter.Button(classMethodsFrame, font=(self.getSetting("button-font"), self.getSetting("button-font-size")),
-                                                      background=self.getSetting("remove-button-background"), text="Remove method",
-                                                      command=lambda: methodsList.delete(
-                                                          methodsList.curselection())
-                                                      if len(methodsList.curselection()) > 0 else False)
+                                                            background=self.getSetting("remove-button-background"), text="Remove method",
+                                                            command=lambda: methodsList.delete(
+            methodsList.curselection())
+            if len(methodsList.curselection()) > 0 else False)
         deleteMethodButton.grid(row=0, column=1, sticky="wens")
         # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
