@@ -3,5 +3,5 @@
     "python.linting.mypyEnabled": true,
     "python.linting.enabled": true,
     "python.terminal.executeInFileDir": true,
-    "python.pythonPath": "C:\\Users\\Eryk\\AppData\\Local\\Programs\\Python\\Python37\\python.exe"
+    "python.pythonPath": "C:\\Program Files\\Python37\\python.exe"
 }
