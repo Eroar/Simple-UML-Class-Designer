@@ -1,0 +1,25 @@
+{
+    "title": "Simple UML Class Designer",
+    "last-opened-folder": "D:\\GIT\\Simple-UML-Class-Designer",
+    
+    "background": "gray85",
+    "field-background": "snow",
+	"font":"Arial",
+    "font-size":15,
+    "heading-font-size": 20,
+    
+	"list-width":15,
+	"list-height":15,
+
+    "text-width":15,
+    "text-height":15,
+    
+    "AddButton-background":"green",
+    "RemoveButton-background":"red",
+    
+	"OptionMenu-values":[
+		"+ (public)",
+		"# (protected)",
+		"- (private)"
+    ]
+}

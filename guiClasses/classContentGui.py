@@ -3,14 +3,17 @@ from __future__ import annotations
 from abc import ABC
 from tkinter import (SINGLE, Button, Entry, Frame, Label, Listbox, StringVar,
                      Text, Tk, Toplevel, OptionMenu)
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union, TypeVar
+
+parentType = Union[Frame, Toplevel, Tk]
 
 
 class ClassContentGui(ABC):
-    def __init__(self, settings: Dict[str, Any]):
+    def __init__(self, parent: parentType, settings: Dict[str, Any]):
         self._settings: Dict[str, Any] = settings
         self._frameElementsSequence: List[str] = []
         self._frameElements: Dict[str, Any] = {}
+        self._parent: parentType = parent
 
     def updateSettings(self, settings: Dict[str, Any]) -> None:
         self._settings = settings
@@ -18,63 +21,48 @@ class ClassContentGui(ABC):
     def _getSetting(self, setting: str) -> Any:
         return self._settings[setting]
 
-    def _getLabel(self, parent: Union[Frame, Toplevel, Tk], text: str) -> Label:
-        # settings configurations:
-        # label-font
-        # label-font-size
-        # label-background
-        label: Label = Label(parent, text=text, pady=5, font=(self._getSetting("label-font"), self._getSetting(
-            "label-font-size")), background=self._getSetting("label-background"))
+    def _getLabel(self, parent: parentType, text: str) -> Label:
+        label: Label = Label(parent, text=text, pady=5, font=(self._getSetting("font"), self._getSetting(
+            "font-size")), background=self._getSetting("background"))
         return label
 
-    def _getEntry(self, parent: Union[Frame, Toplevel, Tk]) -> Tuple[Entry, StringVar]:
-        # settings configurations:
-        # entry-font
-        # entry-font-size
-        # entry-background
+    def _getEntry(self, parent: parentType) -> Tuple[Entry, StringVar]:
         textVar: StringVar = StringVar(parent)
-        entry: Entry = Entry(parent, textvariable=textVar, font=(self._getSetting("entry-font"), self._getSetting("entry-font-size")),
-                             background=self._getSetting("entry-background"), text="", justify="center")
+        entry: Entry = Entry(parent, textvariable=textVar, font=(self._getSetting("font"), self._getSetting("font-size")),
+                             background=self._getSetting("field-background"), text="", justify="center")
         return entry, textVar
 
-    def _getText(self, parent: Union[Frame, Toplevel, Tk], width: int, height: int) -> Text:
-        # settings configurations:
-        # text-font
-        # text-font-size
-        # text-background
-        text: Text = Text(parent, font=(self._getSetting("text-font"), self._getSetting("text-font-size")),
-                          background=self._getSetting("text-background"), width=width, height=height)
+    def _getText(self, parent: parentType) -> Text:
+        text: Text = Text(parent, font=(self._getSetting("font"), self._getSetting("font-size")),
+                          background=self._getSetting("field-background"))
         return text
 
-    def _getListBox(self, parent: Union[Frame, Toplevel, Tk], listSettingName: str = "normal") -> Listbox:
-        # settings configurations:
-        # -list-font
-        # -list-font-size
-        # -list-width
-        # -list-height
-        # -list-background
-
-        sName: str = listSettingName
-        listbox: Listbox = Listbox(self, selectmode=SINGLE, background=self._getSetting(
-            sName+"-list-background"), width=self._getSetting(sName+"-list-width"), height=self._getSetting(sName+"-list-height"), bd=5)
-        listbox.configure(font=(self._getSetting(sName+"-list-font"), self._getSetting(
-            sName+"-list-font-size")))
+    def _getListBox(self, parent: parentType) -> Listbox:
+        listbox: Listbox = Listbox(parent, selectmode=SINGLE, background=self._getSetting(
+            "field-background"), width=self._getSetting("list-width"), height=self._getSetting("list-height"), bd=5, justify="center")
+        listbox.configure(font=(self._getSetting("font"), self._getSetting(
+            "font-size")))
         return listbox
 
-    def _getOptionMenu(self, parent: Union[Frame, Toplevel, Tk]) -> OptionMenu:
+    def _getOptionMenu(self, parent: parentType) -> OptionMenu:
         optionMenunVar: StringVar = StringVar(parent)
         optionMenu: OptionMenu = OptionMenu(
-            parent, optionMenunVar, *self._getSetting("accessibility-types"))
+            parent, optionMenunVar, *self._getSetting("OptionMenu-values"))
 
-        optionMenu.configure(font=(self._getSetting("text-font"), self._getSetting(
-            "text-font-size")), background=self._getSetting("button-background"))
+        optionMenu.configure(font=(self._getSetting("font"), self._getSetting(
+            "font-size")), background=self._getSetting("background"))
 
-        optionMenu["menu"].configure(font=(self._getSetting("text-font"), self._getSetting(
-            "text-font-size")), background=self._getSetting("button-background"))
+        optionMenu["menu"].configure(font=(self._getSetting("font"), self._getSetting(
+            "font-size")), background=self._getSetting("background"))
 
         return optionMenu
 
-    def _updateFrameElements(self, parent: Union[Frame, Toplevel, Tk]) -> Tuple[List[str], List[str]]:
+    def _getButton(self, parent: parentType) -> Button:
+        button: Button = Button(parent, font=(
+            self._getSetting("font"), self._getSetting("font-size")))
+        return button
+
+    def _updateFrameElements(self, parent: parentType) -> Tuple[List[str], List[str]]:
         self._frameElements = {}
         elementsNotFound: List[str] = []
         for key in self._frameElementsSequence:
@@ -91,14 +79,10 @@ class ClassContentGui(ABC):
             elif widget == "Entry":
                 self._frameElements[key] = self._getEntry(parent)[0]
             elif widget == "Text":
-                self._frameElements[key] = self._getText(
-                    parent, int(keySplitted[1]), int(keySplitted[2]))
+                self._frameElements[key] = self._getText(parent)
             elif widget == "Listbox":
-                if len(keySplitted) != 3:
-                    raise Exception(
-                        "ListBox element should contain 3 elements")
                 self._frameElements[key] = self._getListBox(
-                    parent, keySplitted[1])
+                    parent)
             elif widget == "OptionMenu":
                 self._frameElements[key] = self._getOptionMenu(parent)
             else:
@@ -107,8 +91,8 @@ class ClassContentGui(ABC):
             element for element in self._frameElementsSequence if element not in elementsNotFound]
         return elementsFound, elementsNotFound
 
-    def getFrame(self, parent: Union[Frame, Toplevel, Tk]) -> Frame:
-        newFrame = Frame(parent, background = self._getSetting("background"))
+    def getFrame(self, parent: parentType) -> Frame:
+        newFrame = Frame(parent, background=self._getSetting("background"))
         elementsFound = self._updateFrameElements(newFrame)[0]
         for element in elementsFound:
             self._frameElements[element].pack(side="top")

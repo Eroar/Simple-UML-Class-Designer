@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from tkinter import Frame, Tk, Toplevel
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union, TypeVar
 
 from .classContentGui import ClassContentGui
 
 
 class ClassGui(ClassContentGui):
-    def __init__(self, settings: Dict[str, Any]):
-        super().__init__(settings)
+    def __init__(self, parent:Union[Frame, Toplevel, Tk], settings: Dict[str, Any]):
+        super().__init__(parent, settings)
         self._frameElementsSequence: List[str] = [
             "Accessibility:_Label",
             "Accesibility_OptionMenu",
@@ -18,12 +18,12 @@ class ClassGui(ClassContentGui):
             "Extends_Entry",
             "Empty_Label",
             "Description:_Label",
-            "Description_20_10_Text"
+            "Description_Text"
         ]
 
-    def getFrame(self, parent: Union[Frame, Toplevel, Tk]) -> Frame:
-        newFrame = Frame(parent, background=super()._getSetting("background"))
-        elementsFound = super()._updateFrameElements(newFrame)[0]
+    def getFrame(self) -> Frame:
+        newFrame = Frame(self._parent, background=super()._getSetting("background"))
+        elementsFound = super()._updateFrameElements()[0]
         for element in elementsFound:
             if element == "Accesibility_OptionMenu":
                 self._frameElements[element].pack(
