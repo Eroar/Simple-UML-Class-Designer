@@ -23,8 +23,8 @@ class UML_Designer(tkinter.Frame):
         APP.configure(background=APP.getSetting("background"))
         return ROOT
 
-    def __init__(self, settingsPath: str, master: tkinter.Tk = None):
-        tkinter.Frame.__init__(self, master)
+    def __init__(self, settingsPath: str, master: tkinter.Tk):
+        tkinter.Frame.__init__(,self, master)
         self._master: tkinter.Tk = master
         self._settingsPath: str = settingsPath
         self._settings: Dict = self._loadSettings()

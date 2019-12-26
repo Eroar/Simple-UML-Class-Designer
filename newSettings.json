@@ -1,10 +1,23 @@
 {
-    "title": "Simple UML Class Designer",
-    "last-opened-folder": "D:\\GIT\\Simple-UML-Class-Designer",
+    "program-settings":{
+        "title": "Simple UML Class Designer",
+        "last-opened-folder": "D:\\GIT\\Simple-UML-Class-Designer",
+    },
+
+    "general-cnf":{
+        
+    }
     
-    "background": "gray85",
+    "fields-cnf":{
+        "font":"Arial",
+        "background": "snow",
+        "justify": "center"
+    },
+    "label-cnf":{
+        "background": "gray85",
+
+    }
     "field-background": "snow",
-	"font":"Arial",
     "font-size":15,
     "heading-font-size": 20,
     
@@ -17,6 +30,10 @@
     "AddButton-background":"green",
     "RemoveButton-background":"red",
     
+    "Listbox-cnf":{
+        "font" : ["Arial"]
+    },
+
 	"OptionMenu-values":[
 		"+ (public)",
 		"# (protected)",

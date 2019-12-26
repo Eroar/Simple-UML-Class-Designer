@@ -3,13 +3,13 @@ from __future__ import annotations
 from tkinter import Frame, Tk, Toplevel
 from typing import Any, Dict, List, Tuple, Union, TypeVar
 
-from .classContentGui import ClassContentGui
+from .classContentFrame import ClassContentFrame, _parentType
 
 
-class ClassGui(ClassContentGui):
-    def __init__(self, parent:Union[Frame, Toplevel, Tk], settings: Dict[str, Any]):
+class ClassFrame(ClassContentFrame):
+    def __init__(self, parent: _parentType, settings: Dict[str, Any]):
         super().__init__(parent, settings)
-        self._frameElementsSequence: List[str] = [
+        super()._setFramesSequence([
             "Accessibility:_Label",
             "Accesibility_OptionMenu",
             "Name:_Label",
@@ -19,10 +19,10 @@ class ClassGui(ClassContentGui):
             "Empty_Label",
             "Description:_Label",
             "Description_Text"
-        ]
+        ])
+        super()._lateInit()
 
-    def getFrame(self) -> Frame:
-        newFrame = Frame(self._parent, background=super()._getSetting("background"))
+    def _placeWidgets(self) -> None:
         elementsFound = super()._updateFrameElements()[0]
         for element in elementsFound:
             if element == "Accesibility_OptionMenu":
@@ -35,4 +35,3 @@ class ClassGui(ClassContentGui):
             else:
                 self._frameElements[element].pack(
                     side="top", fill="both", padx=10, pady=2)
-        return newFrame

@@ -1,19 +1,25 @@
 from __future__ import annotations
 
-from abc import ABC
-from tkinter import (SINGLE, Button, Entry, Frame, Label, Listbox, StringVar,
+from tkinter import (BROWSE, Button, Entry, Frame, Label, Listbox, StringVar,
                      Text, Tk, Toplevel, OptionMenu)
 from typing import Any, Dict, List, Tuple, Union, TypeVar
 
-parentType = Union[Frame, Toplevel, Tk]
+_parentType = Union[Frame, Toplevel, Tk]
 
 
-class ClassContentGui(ABC):
-    def __init__(self, parent: parentType, settings: Dict[str, Any]):
+class ClassContentFrame(Frame):
+    def __init__(self, parent: _parentType, settings: Dict[str, Any]):
         self._settings: Dict[str, Any] = settings
+        super().__init__(parent, background=self._getSetting("background"))
         self._frameElementsSequence: List[str] = []
         self._frameElements: Dict[str, Any] = {}
-        self._parent: parentType = parent
+    
+    def _setFramesSequence(self, newSequence: List[str]) ->None:
+        self._frameElementsSequence = newSequence
+    
+    def _lateInit(self) -> None:
+        #places all elements on frame
+        self._placeWidgets()
 
     def updateSettings(self, settings: Dict[str, Any]) -> None:
         self._settings = settings
@@ -21,33 +27,33 @@ class ClassContentGui(ABC):
     def _getSetting(self, setting: str) -> Any:
         return self._settings[setting]
 
-    def _getLabel(self, parent: parentType, text: str) -> Label:
-        label: Label = Label(parent, text=text, pady=5, font=(self._getSetting("font"), self._getSetting(
+    def _getLabel(self, text: str) -> Label:
+        label: Label = Label(self, text=text, pady=5, font=(self._getSetting("font"), self._getSetting(
             "font-size")), background=self._getSetting("background"))
         return label
 
-    def _getEntry(self, parent: parentType) -> Tuple[Entry, StringVar]:
-        textVar: StringVar = StringVar(parent)
-        entry: Entry = Entry(parent, textvariable=textVar, font=(self._getSetting("font"), self._getSetting("font-size")),
+    def _getEntry(self) -> Tuple[Entry, StringVar]:
+        textVar: StringVar = StringVar(self)
+        entry: Entry = Entry(self, textvariable=textVar, font=(self._getSetting("font"), self._getSetting("font-size")),
                              background=self._getSetting("field-background"), text="", justify="center")
         return entry, textVar
 
-    def _getText(self, parent: parentType) -> Text:
-        text: Text = Text(parent, font=(self._getSetting("font"), self._getSetting("font-size")),
+    def _getText(self) -> Text:
+        text: Text = Text(self, font=(self._getSetting("font"), self._getSetting("font-size")),
                           background=self._getSetting("field-background"))
         return text
 
-    def _getListBox(self, parent: parentType) -> Listbox:
-        listbox: Listbox = Listbox(parent, selectmode=SINGLE, background=self._getSetting(
+    def _getListBox(self) -> Listbox:
+        listbox: Listbox = Listbox(self, selectmode=BROWSE, background=self._getSetting(
             "field-background"), width=self._getSetting("list-width"), height=self._getSetting("list-height"), bd=5, justify="center")
         listbox.configure(font=(self._getSetting("font"), self._getSetting(
             "font-size")))
         return listbox
 
-    def _getOptionMenu(self, parent: parentType) -> OptionMenu:
-        optionMenunVar: StringVar = StringVar(parent)
+    def _getOptionMenu(self) -> OptionMenu:
+        optionMenunVar: StringVar = StringVar(self)
         optionMenu: OptionMenu = OptionMenu(
-            parent, optionMenunVar, *self._getSetting("OptionMenu-values"))
+            self, optionMenunVar, *self._getSetting("OptionMenu-values"))
 
         optionMenu.configure(font=(self._getSetting("font"), self._getSetting(
             "font-size")), background=self._getSetting("background"))
@@ -57,12 +63,12 @@ class ClassContentGui(ABC):
 
         return optionMenu
 
-    def _getButton(self, parent: parentType) -> Button:
-        button: Button = Button(parent, font=(
+    def _getButton(self) -> Button:
+        button: Button = Button(self, font=(
             self._getSetting("font"), self._getSetting("font-size")))
         return button
 
-    def _updateFrameElements(self, parent: parentType) -> Tuple[List[str], List[str]]:
+    def _updateFrameElements(self) -> Tuple[List[str], List[str]]:
         self._frameElements = {}
         elementsNotFound: List[str] = []
         for key in self._frameElementsSequence:
@@ -73,27 +79,24 @@ class ClassContentGui(ABC):
             if widget == "Label":
                 if name == "Empty":
                     # Name_Empty_Label
-                    self._frameElements[key] = self._getLabel(parent, "")
+                    self._frameElements[key] = self._getLabel("")
                 else:
-                    self._frameElements[key] = self._getLabel(parent, name)
+                    self._frameElements[key] = self._getLabel(name)
             elif widget == "Entry":
-                self._frameElements[key] = self._getEntry(parent)[0]
+                self._frameElements[key] = self._getEntry()[0]
             elif widget == "Text":
-                self._frameElements[key] = self._getText(parent)
+                self._frameElements[key] = self._getText()
             elif widget == "Listbox":
-                self._frameElements[key] = self._getListBox(
-                    parent)
+                self._frameElements[key] = self._getListBox()
             elif widget == "OptionMenu":
-                self._frameElements[key] = self._getOptionMenu(parent)
+                self._frameElements[key] = self._getOptionMenu()
             else:
                 elementsNotFound.append(key)
         elementsFound: List[str] = [
             element for element in self._frameElementsSequence if element not in elementsNotFound]
         return elementsFound, elementsNotFound
 
-    def getFrame(self, parent: parentType) -> Frame:
-        newFrame = Frame(parent, background=self._getSetting("background"))
-        elementsFound = self._updateFrameElements(newFrame)[0]
+    def _placeWidgets(self) -> None:
+        elementsFound = self._updateFrameElements()[0]
         for element in elementsFound:
             self._frameElements[element].pack(side="top")
-        return newFrame
