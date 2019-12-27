@@ -1,0 +1,57 @@
+{
+	"program-settings":{
+		"title": "Simple UML Class Designer",
+		"last-opened-folder": "D:\\GIT\\Simple-UML-Class-Designer"
+	},
+
+	"cnfs":{
+		"general":{
+			"font": ["Arial", 15],
+			"background": "gray85"
+		},
+		
+		"field":{
+			"background": "snow"
+		},
+
+		"justify-center":{
+			"justify": "center"
+		},
+
+		"Label":{
+			"background": "gray85",
+		},
+
+		"heading":{
+			"font": ["Arial", 20]
+		},
+
+		"AddButton":{
+			"background":"green",
+			"text":"Add member"
+		},
+
+		"RemoveButton":{
+			"background":"red",
+			"text":"Remove member"
+		},
+
+		"Listbox":{
+			"selectMode":"single",
+			"bd":5,
+			"width":15,
+			"height":15
+		},
+
+		"Text":{
+			"width":15,
+			"height":15
+		},
+
+		"OptionMenu-values":[
+			"+ (public)",
+			"# (protected)",
+			"- (private)"
+		]
+	}
+}

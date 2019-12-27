@@ -24,7 +24,7 @@ class UML_Designer(tkinter.Frame):
         return ROOT
 
     def __init__(self, settingsPath: str, master: tkinter.Tk):
-        tkinter.Frame.__init__(,self, master)
+        tkinter.Frame.__init__(self, master)
         self._master: tkinter.Tk = master
         self._settingsPath: str = settingsPath
         self._settings: Dict = self._loadSettings()

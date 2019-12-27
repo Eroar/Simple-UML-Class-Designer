@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from tkinter import Frame, Tk, Toplevel, Listbox, Button, END
-from typing import Any, Dict, List, Tuple, Union, TypeVar
+from typing import Any, Dict, List, Tuple, Union
 
-from .classContentFrame import ClassContentFrame,  _parentType
+from .classContentFrame import ClassContentFrame, _parentType
+from .memberFrame import MemberFrame
 from .enhListbox import EnhListbox
 
 
@@ -18,40 +19,44 @@ class MembersFrame(ClassContentFrame):
         super()._lateInit()
         self._membersList: EnhListbox = self._frameElements["members_MembersListbox"]
 
-
-        #Testing
-        self.i=0
+        # Testing
+        self.i = 0
 
     def _getAddButton(self) -> Button:
         button: Button = super()._getButton()
-        button.configure(text="Add member", background=super()._getSetting(
-            "AddButton-background"), command=self._onAddButton)
+        cnf: Dict[str, Any] = super()._getCnf("AddButton")
+        cnf["command"] = self._onAddButton
+        button.configure(cnf)
         return button
 
     def _onAddButton(self) -> None:
-        index:Union[str, int]
+        index: Union[str, int]
         try:
             index = self._membersList.curselection()[0] + 1
         except IndexError:
             index = END
         self._membersList.insert(index, f"VALUE {self.i}")
-        self.i+=1
+        self.i += 1
 
     def _getRemoveButton(self) -> Button:
         button: Button = super()._getButton()
-        button.configure(text="Remove member", background=super()._getSetting(
-            "RemoveButton-background"), command=self._onRemoveButton)
+        cnf: Dict[str, Any] = super()._getCnf("RemoveButton")
+        cnf["command"] = self._onRemoveButton
+        button.configure(cnf)
         return button
 
     def _onRemoveButton(self) -> None:
         try:
-            index:int= self._membersList.curselection()[0]
+            index: int = self._membersList.curselection()[0]
             self._membersList.delete(index)
         except IndexError:
             pass
 
     def _getMembersListbox(self) -> EnhListbox:
-        membersListbox : EnhListbox =  EnhListbox(self, {}, self._onMembersListboxDoubleClick)
+        cnf: Dict[str, Any] = super()._getCnf(
+            "general", "field", "justify-center")
+        membersListbox: EnhListbox = EnhListbox(
+            self, cnf, self._onMembersListboxDoubleClick)
         return membersListbox
 
     def _onMembersListboxDoubleClick(self, index: int) -> None:

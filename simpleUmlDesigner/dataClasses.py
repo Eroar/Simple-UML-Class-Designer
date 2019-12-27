@@ -1,17 +1,63 @@
 from __future__ import annotations
 
 import copy
-import json
+from abc import ABC
 from typing import Any, Dict, List
+import json
 
-from .classContent import ClassContent
-from .member import Member
-from .method import Method
+
+class ClassContent(ABC):
+    def __init__(self, name: str = "", accessibility: str = "", description: str = ""):
+        self._name: str = name
+        self._accessibility: str = accessibility
+        self._describtion: str = description
+
+    def setName(self, newName: str) -> None:
+        self._name = newName
+
+    def getName(self) -> str:
+        return self._name
+
+    def setAccessibility(self, newAccessibility: str) -> None:
+        self._accessibility = newAccessibility
+
+    def getAccessibility(self) -> str:
+        return self._accessibility
+
+    def setDescription(self, newDescription: str) -> None:
+        self._describtion = newDescription
+
+    def getDescription(self) -> str:
+        return self._describtion
+
+    def getCopy(self) -> ClassContent:
+        return copy.deepcopy(self)
+
+    def getDict(self) -> Dict[str, str]:
+        outDict: Dict[str, str] = {
+            "Name": self._name,
+            "Accessibility": self._accessibility,
+            "Description": self._describtion
+        }
+        return outDict
+
+
+class ClassInfo(ClassContent):
+    def __init__(self, name: str, accessibility: str = "", extends: str = "", description: str = ""):
+        super().__init__(name, accessibility, description)
+        self._extends = extends
+
+    def setExtends(self, newExtend: str) -> None:
+        self._extends = newExtend
+
+    def getExtends(self) -> str:
+        return self._extends
 
 
 class Diagram(ClassContent):
-    def __init__(self, name: str, accessibility: str = "public", description: str = ""):
-        super().__init__(name, accessibility, description)
+    def __init__(self, name: str = "", accessibility: str = "", description: str = ""):
+        self._classInfo: ClassInfo = ClassInfo(
+            name, accessibility, description)
         self._members: List[Member] = []
         self._methods: List[Method] = []
 
@@ -55,7 +101,7 @@ class Diagram(ClassContent):
         for method in self._methods:
             methodsCopy.append(copy.copy(method))
         return methodsCopy
-    
+
     def getCopy(self) -> Diagram:
         return copy.copy(self)
 
@@ -104,9 +150,33 @@ class Diagram(ClassContent):
         return json.dumps(self.getDict())
 
 
-if __name__ == "__main__":
-    diag = Diagram("test")
-    exampleMember = Member("var1", "int", "example description of it")
-    diag.addMember(exampleMember)
-    from pprint import pprint
-    pprint(diag.getDict())
+class Member(ClassContent):
+    def __init__(self, name: str, accessibility: str = "public", description: str = ""):
+        super().__init__(name, accessibility, description)
+
+    @staticmethod
+    def memberFromDict(memberDict: dict) -> Member:
+        name: str = memberDict["Name"]
+        memberType: str = memberDict["Accessibility"]
+        description: str = memberDict["Description"]
+        return Member(name, memberType, description)
+
+
+class Method(ClassContent):
+    def __init__(self, name: str, accessibility: str = "public", description: str = "", input: str = "", outputType: str = ""):
+        super().__init__(name, accessibility, description)
+        self._input: str = input
+        self._outputType: str = outputType
+
+    def getInput(self) -> str:
+        return self._input
+
+    def getOutputType(self) -> str:
+        return self._outputType
+
+    @staticmethod
+    def methodFromDict(memberDict: dict) -> Method:
+        name: str = memberDict["Name"]
+        memberType: str = memberDict["Accessibility"]
+        description: str = memberDict["Description"]
+        return Method(name, memberType, description)
