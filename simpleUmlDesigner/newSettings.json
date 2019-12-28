@@ -1,6 +1,7 @@
 {
 	"program-settings":{
 		"title": "Simple UML Class Designer",
+		"background": "gray85",
 		"last-opened-folder": "D:\\GIT\\Simple-UML-Class-Designer"
 	},
 
@@ -19,7 +20,7 @@
 		},
 
 		"Label":{
-			"background": "gray85",
+			"background": "gray85"
 		},
 
 		"heading":{

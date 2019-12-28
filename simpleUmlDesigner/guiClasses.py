@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from tkinter import (BROWSE, Button, Entry, Frame, Label, Listbox, StringVar,
-                     Text, Tk, Toplevel, OptionMenu, END)
-from typing import Any, Dict, List, Tuple, Union, TypeVar, Callable
 import copy
+import json
+from tkinter import (BROWSE, END, Button, Entry, Frame, Label, Listbox,
+                     OptionMenu, StringVar, Text, Tk, Toplevel)
+from typing import Any, Callable, Dict, List, Tuple, TypeVar, Union, cast
+
+from .dataClasses import ClassInfo, Diagram, EditingManager, Member, Method, Input
+
 _parentType = Union[Frame, Toplevel, Tk]
-from .dataClasses import ClassInfo
 
 
 class ClassContentFrame(Frame):
@@ -15,6 +18,7 @@ class ClassContentFrame(Frame):
             parent, background=self._settings["cnfs"]["general"]["background"])
         self._frameElementsSequence: List[str] = []
         self._frameElements: Dict[str, Any] = {}
+        self._parent = parent
 
     def _setFramesSequence(self, newSequence: List[str]) -> None:
         self._frameElementsSequence = newSequence
@@ -111,9 +115,11 @@ class ClassEditor(Frame):
     def __init__(self, parent: _parentType, settings: Dict[str, Any]):
         super().__init__(
             parent, background=settings["cnfs"]["general"]["background"])
-        self._classFrame = ClassInfoFrame(self, settings)
+        self._classInfoFrame = ClassInfoFrame(self, settings)
         self._membersFrame = MembersFrame(self, settings)
         self._methodsFrame = MethodsFrame(self, settings)
+
+        self._editingManager = EditingManager()
 
         self._placeElements()
 
@@ -121,9 +127,16 @@ class ClassEditor(Frame):
         self.rowconfigure(0, weight=1)
         for y in range(3):
             self.columnconfigure(y, weight=1)
-        self._classFrame.grid(row=0, column=0, sticky="snew")
+        self._classInfoFrame.grid(row=0, column=0, sticky="snew")
         self._membersFrame.grid(row=0, column=1, sticky="snew")
         self._methodsFrame.grid(row=0, column=2, sticky="snew")
+
+    def editDiag(self, diag2Edit: Diagram) -> None:
+        self._editingManager.setNewOriginalDiag(diag2Edit)
+        diag2Edit = self._editingManager.getDiag2Edit()
+        self._classInfoFrame.setClassInfo(diag2Edit.getClassInfo())
+
+        self._membersFrame.setMembers(diag2Edit.getMembers())
 
 
 class ClassInfoFrame(ClassContentFrame):
@@ -140,18 +153,33 @@ class ClassInfoFrame(ClassContentFrame):
             "Description:_Label",
             "Description_Text"
         ])
-        self._name: StringVar = self._frameElements["Name_EntryVar"]
-        self._accessibility: StringVar = self._frameElements["Accesibility_OptionMenuVar"]
-        self._extends: StringVar = self._frameElements["Extends_EntryVar"]
-        self._description: Text = self._frameElements["Description_Text"]
         super()._lateInit()
+        self._classInfo: ClassInfo
 
-    def setClassInfo(self, classInfo: ClassInfo):
-        self._name = classInfo.getName()
-        self._accessibility = classInfo.getAccessibility()
-        self._extends = classInfo.getExtends()
-        self._description.delete(1.0, END)
-        self._description.insert(END, classInfo.getDescription())
+    def _getElementsDict(self) -> Dict["str", Any]:
+        """A function that is used purely to shorten syntax"""
+        d = {}
+        d["name"] = self._frameElements["Name_EntryVar"]
+        d["accessibility"] = self._frameElements["Accesibility_OptionMenuVar"]
+        d["extends"] = self._frameElements["Extends_EntryVar"]
+        d["description"] = self._frameElements["Description_Text"]
+        return d
+
+    def setClassInfo(self, newClassInfo: ClassInfo):
+        self._classInfo = newClassInfo
+        elements = self._getElementsDict()
+        elements["name"].set(newClassInfo.getName())
+        elements["accessibility"].set(newClassInfo.getAccessibility())
+        elements["extends"].set(newClassInfo.getExtends())
+        elements["description"].delete(1.0, END)
+        elements["description"].insert(END, newClassInfo.getDescription())
+
+    def getClassInfo(self):
+        elements = self._getElementsDict()
+        self._classInfo.setName(elements["name"].get())
+        self._classInfo.setAccessibility(elements["accessibility"].get())
+        self._classInfo.setExtends(elements["extends"].get())
+        self._classInfo.setDescription(elements["description"].get(1.0, END))
 
     def _placeWidgets(self) -> None:
         elementsFound = super()._updateFrameElements()[0]
@@ -230,62 +258,106 @@ class EnhListbox(Listbox):
 
 
 class MemberFrame(ClassContentFrame):
-    def __init__(self, parent: _parentType, settings: Dict[str, Any]):
+    def __init__(self, parent: _parentType, settings: Dict[str, Any], onOkButton: Callable):
         super().__init__(parent, settings)
         super()._setFramesSequence([
             "Name:_Label",
             "Name_Entry",
             "Accessibility:_Label",
-            "Accessibility_OptionMenu",
-            "Type:_Label",
+            "Accesibility_OptionMenu",
+            "Type_Label",
             "Type_Entry",
-            "Empty_Label",
+            "Default value:_Label",
+            "DefaultValue_Entry",
             "Description:_Label",
             "Description_Text",
-            "Ok_OkButton",
-            "Cancel_CancelButton"
+            "ok_OkButton",
+            "cancel_CancelButton"
         ])
-        self._parent: _parentType = parent
+        self._member: Member
+        self._onOkButtonOutFunc = onOkButton
         super()._lateInit()
 
     def _getOkButton(self) -> Button:
         button: Button = super()._getButton()
-        button.configure(command=self._onOkButton)
+        button.configure(command=self._onOkButton, text="ok")
         return button
 
     def _onOkButton(self) -> None:
-        index: Union[str, int]
-        try:
-            index = self._membersList.curselection()[0] + 1
-        except IndexError:
-            index = END
-        self._membersList.insert(index, f"VALUE {self.i}")
-        self.i += 1
+        self.getMember()
+        self._onOkButtonOutFunc()
+        self._parent.destroy()
 
-    def _getRemoveButton(self) -> Button:
+    def _getCancelButton(self) -> Button:
         button: Button = super()._getButton()
-        button.configure(command=self._parent.destroy)
+        button.configure(command=self._parent.destroy, text="cancel")
         return button
 
-    def _placeWidgets(self) -> None:
-        elementsFound = super()._updateFrameElements()[0]
-        for x in range(len(elementsFound)-1):
-            self.rowconfigure(x, weight=1)
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
+    def _getElementsDict(self) -> Dict["str", Any]:
+        """A function that is used purely to shorten syntax"""
+        d = {}
+        d["name"] = self._frameElements["Name_EntryVar"]
+        d["accessibility"] = self._frameElements["Accesibility_OptionMenuVar"]
+        d["type"] = self._frameElements["Type_EntryVar"]
+        d["defaultValue"] = self._frameElements["DefaultValue_EntryVar"]
+        d["description"] = self._frameElements["Description_Text"]
+        return d
+
+    def setMember(self, member: Member):
+        self._member = member
+        elements = self._getElementsDict()
+        elements["name"].set(self._member.getName())
+        elements["accessibility"].set(self._member.getAccessibility())
+        elements["type"].set(self._member.getType())
+        elements["defaultValue"].set(self._member.getDefaulValue())
+        elements["description"].delete(1.0, END)
+        elements["description"].insert(END, self._member.getDescription())
+
+    def getMember(self):
+        elements = self._getElementsDict()
+        self._member.setName(elements["name"].get())
+        self._member.setAccessibility(elements["accessibility"].get())
+        self._member.setType(elements["type"].get())
+        self._member.setDefaulValue(elements["defaultValue"].get())
+        self._member.setDescription(elements["description"].get(1.0, END))
+
+    def _updateFrameElements(self) -> Tuple[List[str], List[str]]:
+        elementsFound, elementsNotFound = super()._updateFrameElements()
+
+        newElementsNotFound: List[str] = []
+        for key in elementsNotFound:
+
+            if key == "ok_OkButton":
+                self._frameElements[key] = self._getOkButton()
+                elementsFound.append(key)
+            elif key == "cancel_CancelButton":
+                self._frameElements[key] = self._getCancelButton()
+            else:
+                newElementsNotFound.append(key)
+
+        for element in elementsNotFound:
+            if element not in newElementsNotFound:
+                elementsFound.append(element)
+
+        return elementsFound, newElementsNotFound
+
+    def _placeWidgets(self):
+        self.rowconfigure(1, weight=1)
+        for y in range(2):
+            self.columnconfigure(y, weight=1)
+        elementsFound, elementsNotFound = self._updateFrameElements()
 
         row = 0
-        for element in elementsFound:
-            if element == "Ok_OkButton":
-                self._frameElements[element].grid(
-                    row=row, column=0, sticky="snew")
-            elif element == "Cancel_CancelButton":
-                self._frameElements[element].grid(
-                    row=row, column=1, sticky="snew")
-                row += 1
+        for key in elementsFound:
+            if key == "ok_OkButton":
+                self._frameElements[key].grid(
+                    row=row, column=0, sticky="nesw", padx=5)
+            elif key == "cancel_CancelButton":
+                self._frameElements[key].grid(
+                    row=row, column=1, sticky="nesw", padx=5)
             else:
-                self._frameElements[element].grid(
-                    row=row, column=0, sticky="snew")
+                self._frameElements[key].grid(
+                    row=row, column=0, sticky="nesw", columnspan=2, padx=10)
                 row += 1
 
 
@@ -298,10 +370,9 @@ class MembersFrame(ClassContentFrame):
             "members_MembersListbox"
         ])
         super()._lateInit()
-        self._membersList: EnhListbox = self._frameElements["members_MembersListbox"]
+        self._membersListGui: EnhListbox = self._frameElements["members_MembersListbox"]
 
-        # Testing
-        self.i = 0
+        self._members: List[Member]
 
     def _getAddButton(self) -> Button:
         button: Button = super()._getButton()
@@ -310,14 +381,57 @@ class MembersFrame(ClassContentFrame):
         button.configure(cnf)
         return button
 
+    def _getElementsDict(self) -> Dict["str", Any]:
+        """A function that is used purely to shorten syntax"""
+        d = {}
+        d["membersListbox"] = self._frameElements["members_MembersListbox"]
+        return d
+
+    def setMembers(self, membersList: List[Member]) -> None:
+        d = self._getElementsDict()
+        membersListbox = d["membersListbox"]
+        membersListbox.delete(0, END)
+        self._members = membersList
+        strList: List[str] = [memberStr.getStr()
+                              for memberStr in self._members]
+
+        for memberStr in strList:
+            membersListbox.insert(END, memberStr)
+
+    def getMembers(self) -> None:
+        d = self._getElementsDict()
+        membersStrs = d["membersListbox"].get(0, END)
+
+        for strIndex, memberStr in enumerate(membersStrs):
+            for memberIndex, member in enumerate(self._members):
+                if member.getStr() == memberStr:
+                    if strIndex != memberIndex:
+                        tmp: Member = self._members[strIndex]
+                        self._members[strIndex] = self._members[memberIndex]
+                        self._members[memberIndex] = tmp
+                        break
+
     def _onAddButton(self) -> None:
         index: Union[str, int]
         try:
-            index = self._membersList.curselection()[0] + 1
+            index = self._membersListGui.curselection()[0] + 1
         except IndexError:
             index = END
-        self._membersList.insert(index, f"VALUE {self.i}")
-        self.i += 1
+        newMember: Member = Member()
+        memberWindow: Toplevel = Toplevel(self)
+        memberFrame: MemberFrame = MemberFrame(
+            memberWindow, self._settings, onOkButton=lambda: self._onOkButton(newMember, index))
+        memberFrame.setMember(newMember)
+        memberWindow.title = "Member"
+        memberFrame.pack(fill="both")
+
+
+    def _onOkButton(self, newMember: Member, index: Union[int, str]):
+        if index == "end":
+            self._members.append(newMember)
+        else:
+            self._members.insert(cast(int, index), newMember)
+        self._membersListGui.insert(index, newMember.getStr())
 
     def _getRemoveButton(self) -> Button:
         button: Button = super()._getButton()
@@ -328,8 +442,10 @@ class MembersFrame(ClassContentFrame):
 
     def _onRemoveButton(self) -> None:
         try:
-            index: int = self._membersList.curselection()[0]
-            self._membersList.delete(index)
+            index: int = self._membersListGui.curselection()[0]
+            self.getMembers()
+            del self._members[index]
+            self._membersListGui.delete(index)
         except IndexError:
             pass
 
@@ -381,6 +497,48 @@ class MembersFrame(ClassContentFrame):
             elif key == "members_MembersListbox":
                 self._frameElements[key].grid(
                     row=1, column=0, sticky="nesw", columnspan=2)
+
+
+class InputFrame(ClassContentFrame):
+    def __init__(self, parent: _parentType, settings: Dict[str, Any]):
+        super().__init__(parent, settings)
+        super()._setFramesSequence([
+            "Name:_Label",
+            "Name_Entry",
+            "Type_Label",
+            "Type_Entry",
+            "Default value:_Label",
+            "DefaultValue_Entry",
+            "Description:_Label",
+            "Description_Text"
+        ])
+        super()._lateInit()
+        self._input: Input
+
+    def _getElementsDict(self) -> Dict["str", Any]:
+        """A function that is used purely to shorten syntax"""
+        d = {}
+        d["name"] = self._frameElements["Name_EntryVar"]
+        d["type"] = self._frameElements["Type_EntryVar"]
+        d["defaultValue"] = self._frameElements["DefaultValue_EntryVar"]
+        d["description"] = self._frameElements["Description_Text"]
+        return d
+
+    def setInput(self, inputClass: Input):
+        self._input = inputClass
+        elements = self._getElementsDict()
+        elements["name"].set(self._input.getName())
+        elements["type"].set(self._input.getType())
+        elements["defaultValue"].set(self._input.getDefaulValue())
+        elements["description"].delete(1.0, END)
+        elements["description"].insert(END, self._input.getDescription())
+
+    def getInput(self):
+        elements = self._getElementsDict()
+        self._input.setName(elements["name"].get())
+        self._input.setType(elements["type"].get())
+        self._input.setDefaulValue(elements["defaultValue"].get())
+        self._input.setDescription(elements["description"].get(1.0, END))
 
 
 class MethodsFrame(ClassContentFrame):
@@ -475,3 +633,41 @@ class MethodsFrame(ClassContentFrame):
             elif key == "methods_MethodsListbox":
                 self._frameElements[key].grid(
                     row=1, column=0, sticky="nesw", columnspan=2)
+
+
+class UML_Designer(Frame):
+    @staticmethod
+    def getRoot(settingsPath: str) -> tkinter.Tk:
+        ROOT = Tk()
+        APP = UML_Designer(settingsPath=settingsPath, master=ROOT)
+        ROOT.title(APP.getSetting("title"))
+        APP.configure(background=APP.getSetting("background"))
+        return ROOT
+
+    def __init__(self, settingsPath: str, master: tkinter.Tk):
+        tkinter.Frame.__init__(self, master)
+        self._master: tkinter.Tk = master
+        self._settingsPath: str = settingsPath
+        self._settings: Dict = self._loadSettings()
+        self._openedExtraWindows = []
+        self._mainWindow()
+
+    def getSetting(self, settingKey: str) -> Any:
+        return self._settings["program-settings"][settingKey]
+
+    def _saveSettings(self) -> None:
+        with open(self._settingsPath, "w") as f:
+            return json.dump(self._settings, f, indent=4)
+
+    def _centerWindow(self, toplevel):
+        toplevel.update_idletasks()
+
+        screenWidth = toplevel.winfo_screenwidth()
+        screenHeight = toplevel.winfo_screenheight()
+
+        size = tuple(int(q)
+                     for q in toplevel.geometry().split('+')[0].split('x'))
+        xPad = screenWidth/2 - size[0]/2
+        yPad = screenHeight/2 - size[1]/2
+
+        toplevel.geometry("%dx%d+%d+%d" % (size[0], size[1], xPad, yPad))

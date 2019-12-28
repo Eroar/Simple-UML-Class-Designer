@@ -2,5 +2,17 @@ Add references to members (line numbers in which files) and methods (line number
 What is used in the class, other functions
 when there are extra windows opened and a user clicks on a class list, ask if the changes are to be saved and close all windows, they are stored in self._openedExtraWindows
 
+
 Scanner:
 	-header file how to scan files, should be invidual for each user
+
+
+
+
+
+
+
+
+Basic implementation
+	-add rich comparison to diagram
+	-add method to member which returns a string that could be passed to membersFrame and same for method

@@ -2,15 +2,24 @@ from __future__ import annotations
 
 import copy
 from abc import ABC
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, cast
 import json
+from os import listdir
+from os.path import isfile, join
 
 
-class ClassContent(ABC):
-    def __init__(self, name: str = "", accessibility: str = "", description: str = ""):
-        self._name: str = name
-        self._accessibility: str = accessibility
-        self._describtion: str = description
+class Content(ABC):
+    _defaultCnf: Dict[str, Any] = {
+        "name": "",
+        "accessibility": "",
+        "description": ""
+    }
+
+    def __init__(self, cnf=_defaultCnf, **kw):
+        cnf = {**cnf, **kw}
+        self._name: str = cnf["name"]
+        self._accessibility: str = cnf["accessibility"]
+        self._describtion: str = cnf["description"]
 
     def setName(self, newName: str) -> None:
         self._name = newName
@@ -30,22 +39,30 @@ class ClassContent(ABC):
     def getDescription(self) -> str:
         return self._describtion
 
-    def getCopy(self) -> ClassContent:
+    def getCopy(self) -> Content:
         return copy.deepcopy(self)
 
     def getDict(self) -> Dict[str, str]:
         outDict: Dict[str, str] = {
-            "Name": self._name,
-            "Accessibility": self._accessibility,
-            "Description": self._describtion
+            "name": self._name,
+            "accessibility": self._accessibility,
+            "description": self._describtion
         }
         return outDict
 
+    @staticmethod
+    def fromDict(cnf: dict) -> Content:
+        return Content(cnf)
 
-class ClassInfo(ClassContent):
-    def __init__(self, name: str, accessibility: str = "", extends: str = "", description: str = ""):
-        super().__init__(name, accessibility, description)
-        self._extends = extends
+
+class ClassInfo(Content):
+    _defaultCnf: Dict[str, Any] = Content._defaultCnf
+    _defaultCnf["extends"] = ""
+
+    def __init__(self, cnf=_defaultCnf, **kw):
+        cnf = {**cnf, **kw}
+        super().__init__(cnf)
+        self._extends = cnf["extends"]
 
     def setExtends(self, newExtend: str) -> None:
         self._extends = newExtend
@@ -53,39 +70,168 @@ class ClassInfo(ClassContent):
     def getExtends(self) -> str:
         return self._extends
 
+    def getDict(self):
+        outDict: Dict[str, Any] = super().getDict()
+        outDict["extends"] = self._extends
+        return outDict
 
-class Diagram(ClassContent):
-    def __init__(self, name: str = "", accessibility: str = "", description: str = ""):
-        self._classInfo: ClassInfo = ClassInfo(
-            name, accessibility, description)
+    @staticmethod
+    def fromDict(cnf: dict) -> ClassInfo:
+        return ClassInfo(cnf)
+
+
+class TypeContent(Content):
+    _defaultCnf: Dict[str, Any] = Content._defaultCnf
+    _defaultCnf["type"] = ""
+
+    def __init__(self, cnf=_defaultCnf, **kw):
+        cnf = {**cnf, **kw}
+        super().__init__(cnf)
+        self._type = cnf["type"]
+
+    def setType(self, newType: str) -> None:
+        self._type = newType
+
+    def getType(self) -> str:
+        return self._type
+
+    def getDict(self):
+        outDict: Dict[str, Any] = super().getDict()
+        outDict["type"] = self._type
+        return outDict
+
+    @staticmethod
+    def fromDict(cnf: dict) -> TypeContent:
+        return TypeContent(cnf)
+
+
+class Method(TypeContent):
+    _defaultCnf: Dict[str, Any] = TypeContent._defaultCnf
+    _defaultCnf["inputs"] = []
+
+    def __init__(self, cnf=_defaultCnf, **kw):
+        cnf = {**cnf, **kw}
+        super().__init__(cnf)
+        self._inputs: List[Input] = cnf["inputs"]
+
+    def setInputs(self, newInputs: List[Input]) -> None:
+        self._inputs = newInputs
+
+    def getInputs(self) -> List[Input]:
+        return self._inputs
+
+    def _getInputsListOfDicts(self) -> List[Dict[str, str]]:
+        outList: List[Dict[str, str]] = []
+        for inpt in self._inputs:
+            outList.append(inpt.getDict())
+        return outList
+
+    def getDict(self) -> Dict[str, Any]:
+        outDict: Dict[str, Any] = super().getDict()
+        outDict["Inputs"] = self._getInputsListOfDicts()
+        return outDict
+
+    @staticmethod
+    def _getInputsFromListOfDicts(lOfDicts: List[Dict[str, str]]) -> List[Input]:
+        outList: List[Input] = []
+        for dic in lOfDicts:
+            outList.append(Input.fromDict(dic))
+        return outList
+
+    @staticmethod
+    def fromDict(cnf: dict) -> Method:
+        inputs: List[Input] = Method._getInputsFromListOfDicts(
+            cnf["Inputs"])
+        return Method(cnf, inputs=inputs)
+
+
+class DefaultTypeContent(TypeContent):
+    _defaultCnf: Dict[str, Any] = Content._defaultCnf
+    _defaultCnf["defaultValue"] = ""
+
+    def __init__(self, cnf=_defaultCnf, **kw):
+        cnf = {**cnf, **kw}
+        super().__init__(cnf)
+        self._defaulValue = cnf["defaultValue"]
+
+    def setDefaulValue(self, newDefaultVaule: str) -> None:
+        self._defaulValue = newDefaultVaule
+
+    def getDefaulValue(self) -> str:
+        return self._defaulValue
+
+    def getDict(self) -> Dict[str, Any]:
+        outDict: Dict[str, Any] = super().getDict()
+        outDict["DefaultValue"] = self._defaulValue
+        return outDict
+
+    @staticmethod
+    def fromDict(cnf: dict) -> DefaultTypeContent:
+        return DefaultTypeContent(cnf)
+
+
+class Member(DefaultTypeContent):
+    _defaultCnf: Dict[str, Any] = DefaultTypeContent._defaultCnf
+
+    def __init__(self, cnf=_defaultCnf, **kw):
+        cnf = {**cnf, **kw}
+        super().__init__(cnf)
+
+    def getStr(self):
+        a: str = self.getAccessibility()
+        n: str = self.getName()
+        t: str = self.getType()
+        return a + " " + n + ": " + t
+
+    @staticmethod
+    def fromDict(cnf: dict) -> Member:
+        return Member(cnf)
+
+
+class Input(DefaultTypeContent):
+    _defaultCnf: Dict[str, Any] = DefaultTypeContent._defaultCnf
+
+    def __init__(self, cnf=_defaultCnf, **kw):
+        cnf = {**cnf, **kw}
+        super().__init__(cnf)
+
+    def getAccessibility(self):
+
+        raise Exception("Input does not have access to accesibility")
+
+    def setAccessibility(self):
+        raise Exception("Input does not have access to accesibility")
+
+    @staticmethod
+    def fromDict(cnf: dict) -> Input:
+        cnf["accessibility"] = ""
+        return Input(cnf)
+
+
+class Diagram:
+    def __init__(self, name: str):
+        self._classInfo: ClassInfo = ClassInfo(name=name)
         self._members: List[Member] = []
         self._methods: List[Method] = []
 
-    def addMember(self, member: Member):
+    def setClassInfo(self, newClassInfo: ClassInfo) -> None:
+        self._classInfo = newClassInfo
+
+    def getClassInfo(self) -> ClassInfo:
+        return self._classInfo
+
+    def addMember(self, member: Member) -> None:
         self._members.append(member)
 
     def setMember(self, index: int, newMember: Member) -> None:
         if index < len(self._members):
             self._members[index] = newMember
 
-    def setMembers(self, newMembers: List[Member]) -> None:
-        self._members = newMembers
-
     def removeMember(self, memberIndex: int) -> None:
         del self._members[memberIndex]
 
-    def addMethod(self, method: Method):
-        self._methods.append(method)
-
-    def setMethod(self, index: int, newMethod: Method) -> None:
-        if index < len(self._methods):
-            self._methods[index] = newMethod
-
-    def setMethods(self, newMethods: List[Method]) -> None:
-        self._methods = newMethods
-
-    def removeMethod(self, methodIndex: int) -> None:
-        del self._methods[methodIndex]
+    def setMembers(self, newMembers: List[Member]) -> None:
+        self._members = newMembers
 
     def getMembers(self) -> List[Member]:
         membersCopy = []
@@ -94,6 +240,19 @@ class Diagram(ClassContent):
             membersCopy.append(copy.copy(member))
 
         return membersCopy
+
+    def addMethod(self, method: Method) -> None:
+        self._methods.append(method)
+
+    def setMethod(self, index: int, newMethod: Method) -> None:
+        if index < len(self._methods):
+            self._methods[index] = newMethod
+
+    def removeMethod(self, methodIndex: int) -> None:
+        del self._methods[methodIndex]
+
+    def setMethods(self, newMethods: List[Method]) -> None:
+        self._methods = newMethods
 
     def getMethods(self) -> List[Method]:
         methodsCopy = []
@@ -106,36 +265,33 @@ class Diagram(ClassContent):
         return copy.copy(self)
 
     @staticmethod
-    def diagramFromJson(jsonFilePath: str) -> Diagram:
-        jDict: dict = {}
-        with open(jsonFilePath, "r") as file:
-            jDict = json.load(file)
+    def fromJsonS(jsonString: str) -> Diagram:
+        jDict: dict = json.loads(jsonString)
 
-        diagName: str = jDict["Class-Name"]
-        newDiag: Diagram = Diagram(diagName)
+        return Diagram.fromDict(jDict)
 
-        for memberDict in jDict["Members"]:
-            newDiag.addMember(Member.memberFromDict(memberDict))
+    @staticmethod
+    def fromDict(diagDict: Dict[str, Any]):
+        classInfo: ClassInfo = ClassInfo.fromDict(diagDict["ClassInfo"])
+        newDiag: Diagram = Diagram.fromClassInfo(classInfo)
 
-        for methodDict in jDict["Methods"]:
-            newDiag.addMethod(Method.methodFromDict(methodDict))
+        for memberDict in diagDict["Members"]:
+            newDiag.addMember(Member.fromDict(memberDict))
+
+        for methodDict in diagDict["Methods"]:
+            newDiag.addMethod(Method.fromDict(methodDict))
         return newDiag
 
     @staticmethod
-    def diagramFromDict(diagramDict: Dict["str", Any]) -> Diagram:
+    def fromClassInfo(classInfo: ClassInfo) -> Diagram:
+        newDiag: Diagram = Diagram(classInfo.getName())
+        newDiag.setClassInfo(classInfo)
 
-        newDiag: Diagram = Diagram(
-            diagramDict["Class-Name"], diagramDict["Accessibility"], diagramDict["Description"])
-
-        for memberDict in diagramDict["Members"]:
-            newDiag.addMember(Member.memberFromDict(memberDict))
-
-        for methodDict in diagramDict["Methods"]:
-            newDiag.addMethod(Method.methodFromDict(methodDict))
         return newDiag
 
     def getDict(self) -> Dict["str", Any]:
-        outDict: Dict[str, Any] = super().getDict()
+        outDict: Dict[str, Any] = {}
+        outDict["ClassInfo"] = self._classInfo.getDict()
         outDict["Members"] = []
         outDict["Methods"] = []
 
@@ -150,33 +306,69 @@ class Diagram(ClassContent):
         return json.dumps(self.getDict())
 
 
-class Member(ClassContent):
-    def __init__(self, name: str, accessibility: str = "public", description: str = ""):
-        super().__init__(name, accessibility, description)
+class DiagramsManager:
+    def __init__(self, folderPath: str):
+        self._folderPath: str = folderPath
+        self._diagrams: List[Diagram] = []
+        self._loadDiagrams
+        self._originalDiagramIndex: Optional[int] = None
+        self._editedDiagram: Optional[Diagram] = None
 
-    @staticmethod
-    def memberFromDict(memberDict: dict) -> Member:
-        name: str = memberDict["Name"]
-        memberType: str = memberDict["Accessibility"]
-        description: str = memberDict["Description"]
-        return Member(name, memberType, description)
+    def getDiagrams(self):
+        return self._diagrams
+
+    def _loadDiagrams(self) -> None:
+        filesInFolder: List[str] = [f for f in listdir(
+            self._folderPath) if isfile(join(self._folderPath, f))]
+
+        self._diagrams = []
+        for file in filesInFolder:
+            with open(join(self._folderPath, file), "r") as f:
+                diagDict = json.load(f)
+            if self._isDictDiagram(diagDict):
+                self._diagrams.append(Diagram.fromDict(diagDict))
+
+    def _isDictDiagram(self, diagDict: Dict[str, str]) -> bool:
+        try:
+            keys2Check = ["ClassInfo", "Members", "Methods"]
+
+            for key in keys2Check:
+                if key not in diagDict:
+                    return False
+            return True
+        except KeyError:
+            return False
+
+    def addDiagram(self, name: str) -> None:
+        self._diagrams.append(Diagram(name))
+
+    def removeDiagram(self, name: Optional[str] = None, index: Optional[int] = None) -> None:
+
+        if name != None:
+            for i, diag in enumerate(self._diagrams):
+                if diag.getClassInfo().getName() == name:
+                    del self._diagrams[i]
+
+        elif index != None:
+            del self._diagrams[cast(Any, index)]
+
+        else:
+            raise Exception("No name nor index provided")
+
+    # def Edit
 
 
-class Method(ClassContent):
-    def __init__(self, name: str, accessibility: str = "public", description: str = "", input: str = "", outputType: str = ""):
-        super().__init__(name, accessibility, description)
-        self._input: str = input
-        self._outputType: str = outputType
+class EditingManager:
+    def __init__(self):
+        self._originalDiag: Diagram = None
+        self._editDiag: Diagram = None
 
-    def getInput(self) -> str:
-        return self._input
+    def revertEditedDiagram(self) -> None:
+        self._editDiag = self._originalDiag.getCopy()
 
-    def getOutputType(self) -> str:
-        return self._outputType
+    def setNewOriginalDiag(self, newDiag: Diagram) -> None:
+        self._originalDiag = newDiag
+        self._editDiag = newDiag.getCopy()
 
-    @staticmethod
-    def methodFromDict(memberDict: dict) -> Method:
-        name: str = memberDict["Name"]
-        memberType: str = memberDict["Accessibility"]
-        description: str = memberDict["Description"]
-        return Method(name, memberType, description)
+    def getDiag2Edit(self) -> Diagram:
+        return self._editDiag
