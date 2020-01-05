@@ -23,6 +23,7 @@
 			"type": "python",
 			"request": "launch",
 			"program": "${file}",
+			"cwd": "{}",
 			"console": "externalTerminal"
 		},
 		{
