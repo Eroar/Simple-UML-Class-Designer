@@ -75,6 +75,14 @@ class ClassContentFrame(Frame):
         button: Button = Button(self, cnf)
         return button
 
+    def _getSequencedElements(self, foundElements: List[str]) -> List[str]:
+        newFoundElements: List[str] = []
+
+        for element in self._frameElementsSequence:
+            if element in foundElements:
+                newFoundElements.append(element)
+        return newFoundElements
+
     def _updateFrameElements(self) -> Tuple[List[str], List[str]]:
         self._frameElements = {}
         elementsNotFound: List[str] = []
@@ -338,6 +346,7 @@ class MemberFrame(ClassContentFrame):
         for element in elementsNotFound:
             if element not in newElementsNotFound:
                 elementsFound.append(element)
+        elementsFound = super()._getSequencedElements(foundElements=elementsFound)
 
         return elementsFound, newElementsNotFound
 
@@ -381,6 +390,36 @@ class MembersFrame(ClassContentFrame):
         button.configure(cnf)
         return button
 
+    def _onAddButton(self) -> None:
+        index: Union[str, int]
+        try:
+            index = self._membersListGui.curselection()[0] + 1
+        except IndexError:
+            index = END
+        newMember: Member = Member()
+        memberWindow: Toplevel = Toplevel(self)
+        memberFrame: MemberFrame = MemberFrame(
+            memberWindow, self._settings, onOkButton=lambda: self._onOkButton(newMember, index))
+        memberFrame.setMember(newMember)
+        memberWindow.title = "Member"
+        memberFrame.pack(fill="both")
+
+    def _getRemoveButton(self) -> Button:
+        button: Button = super()._getButton()
+        cnf: Dict[str, Any] = super()._getCnf("RemoveButton")
+        cnf["command"] = self._onRemoveButton
+        button.configure(cnf)
+        return button
+
+    def _onRemoveButton(self) -> None:
+        try:
+            index: int = self._membersListGui.curselection()[0]
+            self.getMembers()
+            del self._members[index]
+            self._membersListGui.delete(index)
+        except IndexError:
+            pass
+
     def _getElementsDict(self) -> Dict["str", Any]:
         """A function that is used purely to shorten syntax"""
         d = {}
@@ -411,43 +450,12 @@ class MembersFrame(ClassContentFrame):
                         self._members[memberIndex] = tmp
                         break
 
-    def _onAddButton(self) -> None:
-        index: Union[str, int]
-        try:
-            index = self._membersListGui.curselection()[0] + 1
-        except IndexError:
-            index = END
-        newMember: Member = Member()
-        memberWindow: Toplevel = Toplevel(self)
-        memberFrame: MemberFrame = MemberFrame(
-            memberWindow, self._settings, onOkButton=lambda: self._onOkButton(newMember, index))
-        memberFrame.setMember(newMember)
-        memberWindow.title = "Member"
-        memberFrame.pack(fill="both")
-
-
     def _onOkButton(self, newMember: Member, index: Union[int, str]):
         if index == "end":
             self._members.append(newMember)
         else:
             self._members.insert(cast(int, index), newMember)
         self._membersListGui.insert(index, newMember.getStr())
-
-    def _getRemoveButton(self) -> Button:
-        button: Button = super()._getButton()
-        cnf: Dict[str, Any] = super()._getCnf("RemoveButton")
-        cnf["command"] = self._onRemoveButton
-        button.configure(cnf)
-        return button
-
-    def _onRemoveButton(self) -> None:
-        try:
-            index: int = self._membersListGui.curselection()[0]
-            self.getMembers()
-            del self._members[index]
-            self._membersListGui.delete(index)
-        except IndexError:
-            pass
 
     def _getMembersListbox(self) -> EnhListbox:
         cnf: Dict[str, Any] = super()._getCnf(
@@ -478,6 +486,8 @@ class MembersFrame(ClassContentFrame):
         for element in elementsNotFound:
             if element not in newElementsNotFound:
                 elementsFound.append(element)
+
+        elementsFound = super()._getSequencedElements(foundElements=elementsFound)
 
         return elementsFound, newElementsNotFound
 
@@ -541,6 +551,141 @@ class InputFrame(ClassContentFrame):
         self._input.setDescription(elements["description"].get(1.0, END))
 
 
+class MethodFrame(ClassContentFrame):
+    def __init__(self, parent: _parentType, settings: Dict[str, Any], onOkButton: Callable):
+        super().__init__(parent, settings)
+        super()._setFramesSequence([
+            "Name:_Label",
+            "Name_Entry",
+            "Accessibility:_Label",
+            "Accesibility_OptionMenu",
+            "Return type:_Label",
+            "Type_Entry",
+            "Methods:_Label",
+            "Inputs_MethodsListbox",
+            "Description:_Label",
+            "Description_Text",
+            "ok_OkButton",
+            "cancel_CancelButton"
+        ])
+        self._method: Method
+        self._onOkButtonOutFunc = onOkButton
+        super()._lateInit()
+
+    def _getOkButton(self) -> Button:
+        button: Button = super()._getButton()
+        button.configure(command=self._onOkButton, text="ok")
+        return button
+
+    def _onOkButton(self) -> None:
+        self.getMethod()
+        self._onOkButtonOutFunc()
+        self._parent.destroy()
+
+    def _getCancelButton(self) -> Button:
+        button: Button = super()._getButton()
+        button.configure(command=self._parent.destroy, text="cancel")
+        return button
+
+    def _getInputsListbox(self) -> EnhListbox:
+        cnf: Dict[str, Any] = super()._getCnf(
+            "general", "field", "justify-center")
+        inputsListbox: EnhListbox = EnhListbox(
+            self, cnf, self._onInputsListboxDoubleClick)
+        return inputsListbox
+
+    def _onInputsListboxDoubleClick(self, index: int) -> None:
+        print(f"Double click {index}")
+
+    def _getElementsDict(self) -> Dict["str", Any]:
+        """A function that is used purely to shorten syntax"""
+        d = {}
+        d["name"] = self._frameElements["Name_EntryVar"]
+        d["accessibility"] = self._frameElements["Accesibility_OptionMenuVar"]
+        d["type"] = self._frameElements["Type_EntryVar"]
+        d["inputsListbox"] = self._frameElements["Inputs_MethodsListbox"]
+        d["description"] = self._frameElements["Description_Text"]
+        return d
+
+    def setMethod(self, method: Method):
+        self._method = method
+        elements = self._getElementsDict()
+        elements["name"].set(self._method.getName())
+        elements["accessibility"].set(self._method.getAccessibility())
+        elements["type"].set(self._method.getType())
+        inputsListbox = elements["inputsListbox"]
+        inputsListbox.delete(0, END)
+        strList: List[str] = [inputStr.getStr()
+                              for inputStr in self._method.getInputs()]
+
+        for memberStr in strList:
+            inputsListbox.insert(END, memberStr)
+        elements["description"].delete(1.0, END)
+        elements["description"].insert(END, self._method.getDescription())
+
+    def getMethod(self):
+        elements = self._getElementsDict()
+        self._method.setName(elements["name"].get())
+        self._method.setAccessibility(elements["accessibility"].get())
+        self._method.setType(elements["type"].get())
+        self._method.setDescription(elements["description"].get(1.0, END))
+
+        d = self._getElementsDict()
+        inputsStr = d["inputsListbox"].get(0, END)
+
+        for strIndex, memberStr in enumerate(inputsStr):
+            for inputIndex, member in enumerate(self._method.getInputs()):
+                if member.getStr() == memberStr:
+                    if strIndex != inputIndex:
+                        tmp: Member = self._method.getInputs()[strIndex]
+                        self._method.getInputs()[strIndex] = self._method.getInputs()[
+                            inputIndex]
+                        self._method.getInputs()[inputIndex] = tmp
+                        break
+
+    def _updateFrameElements(self) -> Tuple[List[str], List[str]]:
+        elementsFound, elementsNotFound = super()._updateFrameElements()
+
+        newElementsNotFound: List[str] = []
+        for key in elementsNotFound:
+
+            if key == "ok_OkButton":
+                self._frameElements[key] = self._getOkButton()
+                elementsFound.append(key)
+            elif key == "cancel_CancelButton":
+                self._frameElements[key] = self._getCancelButton()
+            elif key == "Inputs_MethodsListbox":
+                self._frameElements[key] = self._getInputsListbox()
+            else:
+                newElementsNotFound.append(key)
+
+        for element in elementsNotFound:
+            if element not in newElementsNotFound:
+                elementsFound.append(element)
+        elementsFound = super()._getSequencedElements(foundElements=elementsFound)
+
+        return elementsFound, newElementsNotFound
+
+    def _placeWidgets(self):
+        self.rowconfigure(1, weight=1)
+        for y in range(2):
+            self.columnconfigure(y, weight=1)
+        elementsFound, elementsNotFound = self._updateFrameElements()
+
+        row = 0
+        for key in elementsFound:
+            if key == "ok_OkButton":
+                self._frameElements[key].grid(
+                    row=row, column=0, sticky="nesw", padx=5)
+            elif key == "cancel_CancelButton":
+                self._frameElements[key].grid(
+                    row=row, column=1, sticky="nesw", padx=5)
+            else:
+                self._frameElements[key].grid(
+                    row=row, column=0, sticky="nesw", columnspan=2, padx=10)
+                row += 1
+
+
 class MethodsFrame(ClassContentFrame):
     def __init__(self, parent: _parentType, settings: Dict[str, Any]):
         super().__init__(parent, settings)
@@ -549,11 +694,9 @@ class MethodsFrame(ClassContentFrame):
             "removeMethod_RemoveButton",
             "methods_MethodsListbox"
         ])
+        self._methods: List[Method] = []
         super()._lateInit()
-        self._methodsList: EnhListbox = self._frameElements["methods_MethodsListbox"]
-
-        # Testing
-        self.i = 0
+        self._methodsListGui: EnhListbox = self._frameElements["methods_MethodsListbox"]
 
     def _getAddButton(self) -> Button:
         button: Button = super()._getButton()
@@ -565,11 +708,16 @@ class MethodsFrame(ClassContentFrame):
     def _onAddButton(self) -> None:
         index: Union[str, int]
         try:
-            index = self._methodsList.curselection()[0] + 1
+            index = self._methodsListGui.curselection()[0] + 1
         except IndexError:
             index = END
-        self._methodsList.insert(index, f"VALUE {self.i}")
-        self.i += 1
+        newMethod: Method = Method()
+        methodWindow: Toplevel = Toplevel(self)
+        methodFrame: MethodFrame = MethodFrame(
+            methodWindow, self._settings, onOkButton=lambda: self._onOkButton(newMethod, index))
+        methodFrame.setMethod(newMethod)
+        methodWindow.title = "Method " + newMethod.getName()
+        methodFrame.pack(fill="both")
 
     def _getRemoveButton(self) -> Button:
         button: Button = super()._getButton()
@@ -580,10 +728,49 @@ class MethodsFrame(ClassContentFrame):
 
     def _onRemoveButton(self) -> None:
         try:
-            index: int = self._methodsList.curselection()[0]
-            self._methodsList.delete(index)
+            index: int = self._methodsListGui.curselection()[0]
+            self._methodsListGui.delete(index)
         except IndexError:
             pass
+
+    def _getElementsDict(self) -> Dict["str", Any]:
+        """A function that is used purely to shorten syntax"""
+
+        # TODO
+        d = {}
+        d["methodsListbox"] = self._frameElements["methods_MethodsListbox"]
+        return d
+
+    def setMethods(self, methodsList: List[Method]) -> None:
+        d = self._getElementsDict()
+        methodsListbox = d["methodsListbox"]
+        methodsListbox.delete(0, END)
+        self._methods = methodsList
+        strList: List[str] = [memberStr.getStr()
+                              for memberStr in self._methods]
+
+        for methodStr in strList:
+            methodsListbox.insert(END, methodStr)
+
+    def getMethods(self) -> None:
+        d = self._getElementsDict()
+        methodsStrs = d["methodsListbox"].get(0, END)
+
+        for strIndex, methodStr in enumerate(methodsStrs):
+            for memberIndex, member in enumerate(self._members):
+                if member.getStr() == methodStr:
+                    if strIndex != memberIndex:
+                        tmp: Member = self._methods[strIndex]
+                        self._methods[strIndex] = self._methods[memberIndex]
+                        self._methods[memberIndex] = tmp
+                        break
+
+    def _onOkButton(self, newMethod: Method, index: Union[int, str]):
+        if index == "end":
+            self._methods.append(newMethod)
+        else:
+            self._methods.insert(cast(int, index), newMethod)
+        self._methodsListGui.insert(index, newMethod.getStr())
 
     def _getMethodsListbox(self) -> EnhListbox:
         cnf: Dict[str, Any] = super()._getCnf(
@@ -614,6 +801,8 @@ class MethodsFrame(ClassContentFrame):
         for element in elementsNotFound:
             if element not in newElementsNotFound:
                 elementsFound.append(element)
+
+        elementsFound = super()._getSequencedElements(foundElements=elementsFound)
 
         return elementsFound, newElementsNotFound
 

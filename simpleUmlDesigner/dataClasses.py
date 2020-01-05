@@ -120,6 +120,17 @@ class Method(TypeContent):
     def getInputs(self) -> List[Input]:
         return self._inputs
 
+    def getStr(self):
+        a: str = self.getAccessibility()
+        n: str = self.getName()
+        t: str = self.getType()
+        outStr = n
+        if a != "":
+            outStr += " : " + a
+        if t != "":
+            outStr += " => " + t
+        return outStr
+
     def _getInputsListOfDicts(self) -> List[Dict[str, str]]:
         outList: List[Dict[str, str]] = []
         for inpt in self._inputs:
@@ -201,6 +212,17 @@ class Input(DefaultTypeContent):
 
     def setAccessibility(self):
         raise Exception("Input does not have access to accesibility")
+
+    def getStr(self):
+        n: str = self.getName()
+        t: str = self.getType()
+        d: str = self.getDefaulValue()
+        outStr = n
+        if t != "":
+            outStr += " : " + t
+        if d != "":
+            outStr += " = " + d
+        return outStr
 
     @staticmethod
     def fromDict(cnf: dict) -> Input:
